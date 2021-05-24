@@ -34,7 +34,7 @@ func update_name(name: String, color: Color = Color.white, autocolor: bool=false
 		name_label.visible = false
 
 
-func update_text(text):
+func update_text(text:String) -> bool:
 	# Removing commands from the text
 	text = text.replace('[nw]', '')
 	
@@ -63,19 +63,24 @@ func update_text(text):
 	
 	
 	# Updating the text and starting the animation from 0
-	text_label.bbcode_text = bbcode_blocks[0]
+	if text_speed == 0:
+		_add_all_bbcode_blocks()
+	else:
+		text_label.bbcode_text = bbcode_blocks[0]
 	text_label.visible_characters = 0
 	
 	start_text_timer()
 	return true
 
 
-func is_finished():
+func is_finished() -> bool:
 	return _finished
 
 
 func skip():
 	$WritingTimer.stop()
+	if bbcode_blocks.size() > 1: # Append all the blocks without any wait
+		_add_all_bbcode_blocks()
 	$RichTextLabel.visible_characters = -1
 	_finished = true
 	emit_signal("text_completed")
@@ -182,6 +187,13 @@ func load_theme(theme: ConfigFile):
 ##								PRIVATE METHODS
 ## *****************************************************************************
 
+
+func _add_all_bbcode_blocks():
+	$RichTextLabel.bbcode_text = ''
+	for t in bbcode_blocks:
+		$RichTextLabel.append_bbcode(t)
+
+
 func _on_writing_timer_timeout():
 	var pos = $RichTextLabel.get_visible_characters()
 	$RichTextLabel.visible_characters += 1
@@ -198,7 +210,7 @@ func _process(_delta):
 				current_bbcode_block += 1
 				$RichTextLabel.append_bbcode(bbcode_blocks[current_bbcode_block])
 				$WritingTimer.paused = true
-				yield(get_tree().create_timer(1), "timeout")
+				yield(get_tree().create_timer(0.5), "timeout")
 				$WritingTimer.paused = false
 
 

@@ -382,6 +382,7 @@ func update_text(text: String) -> String:
 func _on_text_completed():
 	if current_event.has('text'):
 		if '[nw]' in current_event['text']:
+			yield(get_tree().create_timer(0.1), "timeout")
 			_load_next_event()
 	finished = true
 	if current_event.has('options'):
