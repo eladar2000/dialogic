@@ -44,7 +44,7 @@ func update_text(text):
 		current_bbcode_block = 0
 		bbcode_blocks = text.split('[p]')
 	else:
-		bbcode_blocks[0] = text
+		bbcode_blocks.append(text)
 	
 	# This hacks replaces empty blocks with a zero white space to not break
 	# the timer functions and skip ahead before time
