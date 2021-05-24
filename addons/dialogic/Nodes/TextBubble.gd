@@ -38,12 +38,19 @@ func update_text(text):
 	# Removing commands from the text
 	text = text.replace('[nw]', '')
 	
-	# BBCode magic
+	# BBCode magic: I split the text into an array and then I add that array
+	# piece by piece. This way I can perform actions when a block is over
+	# and it is easier to change things like text speed, add pauses and other
+	# functionalities. This was impossible for me to fix using other methods
+	# since it is really hard to know the current position of the text without
+	# its bbcode tags.
+	bbcode_blocks = []
+	current_bbcode_block = 0
+	
 	if '[p]' in text:
-		bbcode_blocks.clear()
-		current_bbcode_block = 0
 		bbcode_blocks = text.split('[p]')
 	else:
+		# No custom bbcode found
 		bbcode_blocks.append(text)
 	
 	# This hacks replaces empty blocks with a zero white space to not break
@@ -51,16 +58,13 @@ func update_text(text):
 	var ind = 0
 	for block in bbcode_blocks:
 		if block == '':
-			bbcode_blocks[ind] = '​' #WARNING THIS IS A ZERO WIDTH SPACE https://en.wikipedia.org/wiki/Zero-width_space
+			bbcode_blocks[ind] = '​' #WARNING THIS IS A ZERO WIDTH SPACE
 		ind += 1
 	
 	
 	# Updating the text and starting the animation from 0
 	text_label.bbcode_text = bbcode_blocks[0]
 	text_label.visible_characters = 0
-	
-	print(text_label.bbcode_text)
-	
 	
 	start_text_timer()
 	return true
