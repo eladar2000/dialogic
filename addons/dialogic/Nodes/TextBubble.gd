@@ -2,6 +2,9 @@ tool
 extends Control
 
 var text_speed := 0.02 # Higher = lower speed
+var text_slowdown = 10
+var bbcode_blocks = []
+var current_bbcode_block = 0
 
 onready var text_label = $RichTextLabel
 onready var name_label = $NameLabel
@@ -33,12 +36,31 @@ func update_name(name: String, color: Color = Color.white, autocolor: bool=false
 
 func update_text(text):
 	# Removing commands from the text
-	text = text.replace('[p]', '')
 	text = text.replace('[nw]', '')
 	
+	# BBCode magic
+	if '[p]' in text:
+		bbcode_blocks.clear()
+		current_bbcode_block = 0
+		bbcode_blocks = text.split('[p]')
+	else:
+		bbcode_blocks[0] = text
+	
+	# This hacks replaces empty blocks with a zero white space to not break
+	# the timer functions and skip ahead before time
+	var ind = 0
+	for block in bbcode_blocks:
+		if block == '':
+			bbcode_blocks[ind] = '​' #WARNING THIS IS A ZERO WIDTH SPACE https://en.wikipedia.org/wiki/Zero-width_space
+		ind += 1
+	
+	
 	# Updating the text and starting the animation from 0
-	text_label.bbcode_text = text
+	text_label.bbcode_text = bbcode_blocks[0]
 	text_label.visible_characters = 0
+	
+	print(text_label.bbcode_text)
+	
 	
 	start_text_timer()
 	return true
@@ -156,21 +178,30 @@ func load_theme(theme: ConfigFile):
 ##								PRIVATE METHODS
 ## *****************************************************************************
 
-
 func _on_writing_timer_timeout():
+	var pos = $RichTextLabel.get_visible_characters()
 	$RichTextLabel.visible_characters += 1
 
 
 func _process(_delta):
 	if _finished == false:
 		if $RichTextLabel.visible_characters >= $RichTextLabel.get_total_character_count():
-			_finished = true
-			emit_signal("text_completed")
+			if bbcode_blocks.size() - 1 == current_bbcode_block:
+				_finished = true
+				$WritingTimer.stop()
+				emit_signal("text_completed")
+			else:
+				current_bbcode_block += 1
+				$RichTextLabel.append_bbcode(bbcode_blocks[current_bbcode_block])
+				$WritingTimer.paused = true
+				yield(get_tree().create_timer(1), "timeout")
+				$WritingTimer.paused = false
 
 
 func start_text_timer():
 	if text_speed == 0:
 		_finished = true
+		$WritingTimer.stop()
 		$RichTextLabel.visible_characters = -1
 		emit_signal("text_completed")
 	else:
